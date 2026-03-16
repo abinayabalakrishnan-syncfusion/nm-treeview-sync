@@ -4245,6 +4245,20 @@ var TreeView = /** @class */ (function (_super) {
         if (!isNOU(this.nodeTemplateFn)) {
             this.destroyTemplate(node);
         }
+        // remove event handlers attached to the node to avoid retaining references
+        try {
+            EventHandler.remove(node, 'focus', this.focusIn);
+            EventHandler.remove(node, 'blur', this.focusOut);
+            var frame = select('.' + CHECKBOXFRAME, node);
+            if (frame) {
+                EventHandler.remove(frame, 'mousedown', this.frameMouseHandler);
+                EventHandler.remove(frame, 'mouseup', this.frameMouseHandler);
+                EventHandler.remove(frame, 'mouseleave', this.frameMouseHandler);
+            }
+        }
+        catch (e) {
+            // ignore if handlers are not present
+        }
         detach(node);
         this.updateElement(dragParentUl, dragParentLi);
         this.removeData(node);
@@ -4770,6 +4784,31 @@ var TreeView = /** @class */ (function (_super) {
         this.wireExpandOnEvent(false);
         EventHandler.remove(this.element, 'mouseover', this.onMouseOver);
         EventHandler.remove(this.element, 'mouseout', this.onMouseLeave);
+        // remove any contextmenu handler added during interactions
+        try {
+            EventHandler.remove(this.element, 'contextmenu', this.preventContextMenu);
+        }
+        catch (e) {
+            // ignore
+        }
+        // remove per-item handlers (focus/blur/frame) to avoid retained closures
+        try {
+            var liElements = selectAll('.' + LISTITEM, this.element);
+            for (var i = 0; i < liElements.length; i++) {
+                var li = liElements[parseInt(i.toString(), 10)];
+                EventHandler.remove(li, 'focus', this.focusIn);
+                EventHandler.remove(li, 'blur', this.focusOut);
+                var frame = select('.' + CHECKBOXFRAME, li);
+                if (frame) {
+                    EventHandler.remove(frame, 'mousedown', this.frameMouseHandler);
+                    EventHandler.remove(frame, 'mouseup', this.frameMouseHandler);
+                    EventHandler.remove(frame, 'mouseleave', this.frameMouseHandler);
+                }
+            }
+        }
+        catch (e) {
+            // ignore
+        }
         if (!this.disabled) {
             this.keyboardModule.destroy();
         }
